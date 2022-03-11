@@ -6,13 +6,18 @@ import re
 import shutil
 
 ROOT = r"D:\Chinatelecom\test"
-XML_PATH = "D:\\Chinatelecom\\test\\test_2.xlsx"
+# 目前使用的模板需要删除提示信息行和最后的合计行，仅保留每人一行的数据
+# 需求表格位置
+XLSX_PATH = "D:\\Chinatelecom\\test\\2022年Q1.xlsx"
+SHEET_NAME = "工作表1"
+# 分配发票的单张金额
+values = [1500, 1000, 900, 800,
+          700, 600, 500, 400, 300, 200, 100, 50]
+
+#暂时不用
 TRAVEL_PATH = r"D:\ChinaTelecom\test\Q\交通"
 CELLPHONE_PATH = r"D:\ChinaTelecom\test\Q\通讯"
-SHEET_NAME = "工作表1"
 
-# 分配发票的单张金额
-values = [1000, 900, 800, 700, 600, 500, 400, 300, 200, 100, 50]
 
 
 class Need:
@@ -249,7 +254,7 @@ class Dispather:
                         emp.phone_miss = []
                         detail = emp.travel_need.detail
                         #分配交通票
-                        index = 0
+                        index = 1
                         for val,count in detail.items():
                                 while count > 0:
                                         inv = self.get_one(val, self.travel_sorted)
@@ -261,7 +266,7 @@ class Dispather:
                                                 continue
                                                 
                                         name = self.gen_name(emp.name, "交通", index, inv.amount)
-                                        os.path.join(dest, name)
+                                        dest = os.path.join(dest, name)
                                         print(f'{emp.name} got {inv.path}')
                                         emp.job.append((inv.path, dest))
                                         count-=1
@@ -269,9 +274,10 @@ class Dispather:
                         # 分配通信票
                         phone_val = emp.cellphone
                         inv = self.get_one(phone_val, self.cellphone_sorted)
+                        index = 1
                         if inv == None:
-                                print(f'{emp.name} get 通信 {val} failed')
-                                emp.phone_miss.append(val)
+                                print(f'{emp.name} get 通信 {phone_val} failed')
+                                emp.phone_miss.append(phone_val)
                                 continue
 
                         name = self.gen_name(emp.name, "通信", index, inv.amount)
@@ -309,12 +315,12 @@ class Dispather:
 
         
 if __name__ == "__main__":
-        worker = Dispather(ROOT, XML_PATH, TRAVEL_PATH, CELLPHONE_PATH)                
+        worker = Dispather(ROOT, XLSX_PATH, TRAVEL_PATH, CELLPHONE_PATH)                
         worker.load_xlsx()
         worker.count_need()
-        worker.load_all_invoices()
-        worker.sort_invoices()
+        # worker.load_all_invoices()
+        # worker.sort_invoices()
 
-        worker.dispatch()
-        pass
+        # worker.dispatch()
+        # pass
 
