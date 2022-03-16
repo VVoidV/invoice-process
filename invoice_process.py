@@ -14,23 +14,25 @@ SHEET_NAME = "工作表1"
 values = [1500, 1000, 900, 800,
           700, 600, 500, 400, 300, 200, 100, 50]
 
+cellphone_val = [2200, 50]
 #暂时不用
-TRAVEL_PATH = r"D:\ChinaTelecom\test\Q\交通"
-CELLPHONE_PATH = r"D:\ChinaTelecom\test\Q\通讯"
+# TRAVEL_PATH = r"D:\ChinaTelecom\test\Q\交通"
+TRAVEL_PATH = r""
+CELLPHONE_PATH = r"D:\ChinaTelecom\报销\2022\Q1\交通\2250发票 106张"
 
 
 
 class Need:
-        def __init__(self, amount, step):
+        def __init__(self, amount, available, step):
                 self.amount = amount
-                self.detail = self.split_amount(amount, step)
+                self.detail = self.split_amount(amount, available, step)
 
-        def split_amount(self, amount, step):
+        def split_amount(self, amount, available, step):
                 remain = amount
                 result = {}
                 if amount == 0:
                         return result
-                for value in values:
+                for value in available:
                         if value < step:
                                 print("illegal need")
                                 raise
@@ -61,7 +63,8 @@ class Person:
                 self.name = name or ""
                 self.travel = travel or 0
                 self.cellphone = cellphone or 0
-                self.travel_need = Need(self.travel, 100)
+                self.travel_need = Need(self.travel, values, 100)
+                self.cellphone_need = Need(self.cellphone, cellphone_val, 50)
 
         def __repr__(self):
                 return self.__str__()
@@ -204,7 +207,7 @@ class Dispather:
         def load_all_invoices(self):
             if self.cellphone_path:
                 self.cellphone_invoices, self.fail_cellphone = self.load_invoices(self.cellphone_path)
-            if self.cellphone_path:
+            if self.travel_path:
                 self.travel_invoices, self.fail_travel = self.load_invoices(self.travel_path)
         
         def sort_invoices(self):
@@ -272,18 +275,40 @@ class Dispather:
                                         count-=1
                                         index += 1
                         # 分配通信票
-                        phone_val = emp.cellphone
-                        inv = self.get_one(phone_val, self.cellphone_sorted)
+                        detail = emp.cellphone_need.detail
                         index = 1
-                        if inv == None:
-                                print(f'{emp.name} get 通信 {phone_val} failed')
-                                emp.phone_miss.append(phone_val)
-                                continue
+                        for val,count in detail.items():
+                                while count > 0:
+                                        inv = self.get_one(val, self.cellphone_sorted)
 
-                        name = self.gen_name(emp.name, "通信", index, inv.amount)
-                        dest = os.path.join(phone_res_path, emp.name)
-                        dest = os.path.join(dest, name)
-                        emp.job.append((inv.path, dest))
+                                        if inv == None:
+                                                print(f'{emp.name} get 通信 {val} failed')
+                                                emp.travel_miss.append(val)
+                                                count -=1
+                                                continue
+                                                
+                                        name = self.gen_name(emp.name, "通信", index, inv.amount)
+                                        dest = os.path.join(dest, name)
+                                        print(f'{emp.name} got {inv.path}')
+                                        emp.job.append((inv.path, dest))
+                                        count-=1
+                                        index += 1
+                        # phone_val = emp.cellphone
+                        # inv = self.get_one(phone_val, self.cellphone_sorted)
+                        # index = 1
+                        # if inv == None:
+                        #         print(f'{emp.name} get 通信 {phone_val} failed')
+                        #         emp.phone_miss.append(phone_val)
+                        #         continue
+
+                        # name = self.gen_name(emp.name, "通信", index, inv.amount)
+                        # dest = os.path.join(phone_res_path, emp.name)
+                        # dest = os.path.join(dest, name)
+                        # emp.job.append((inv.path, dest))
+                        
+                for emp in self.employees.values():
+                        for j in emp.job:
+                                 print(j)
 
 
 
@@ -318,9 +343,9 @@ if __name__ == "__main__":
         worker = Dispather(ROOT, XLSX_PATH, TRAVEL_PATH, CELLPHONE_PATH)                
         worker.load_xlsx()
         worker.count_need()
-        # worker.load_all_invoices()
-        # worker.sort_invoices()
+        worker.load_all_invoices()
+        worker.sort_invoices()
 
-        # worker.dispatch()
-        # pass
+        worker.dispatch()
+        pass
 
